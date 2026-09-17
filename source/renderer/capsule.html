@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>桌面胶囊</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:transparent;font:14px Arial,'Noto Sans SC',sans-serif;color:#574b3c;overflow:hidden}
+#capsule{border:1px solid #e8d6b1;border-radius:19px;background:#fffbea;overflow:hidden;max-height:100vh;display:flex;flex-direction:column}
+header{display:flex;gap:9px;align-items:center;padding:13px 15px;background:#fcf1d7;border-bottom:1px solid #eadabc;flex-shrink:0}
+header.drag{-webkit-app-region:drag}header input{-webkit-app-region:no-drag}#dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+input,button{font:inherit;color:inherit}#title{font-weight:600;border:0;background:transparent;min-width:0;width:100%;outline:none}#title:focus{background:#fff9ea}
+#items{overflow-y:auto;min-height:0;padding:7px 12px}.item{display:flex;gap:8px;align-items:flex-start;padding:9px 0}.check{margin-top:3px;accent-color:#e8864a;cursor:pointer}.content{flex:1;min-width:0}.text{white-space:pre-wrap;overflow-wrap:anywhere;cursor:text}.time{font-size:11px;color:#ad8451;margin-top:4px}.timer{border:0;background:transparent;cursor:pointer;color:#ac9270;padding:0 2px}.empty{color:#b49f80;font-size:12px;padding:12px 0}
+footer{padding:6px 12px 11px;flex-shrink:0}#add{width:100%;padding:7px 10px;border-radius:9px;border:1px solid #e8d6b1;background:#fffdf5;outline:none}.hint{font-size:10px;color:#b29d7c;margin-top:7px;text-align:center}
+body.readonly footer,body.readonly .timer{display:none}body.readonly .check{pointer-events:none}body.readonly #items{padding-bottom:12px}
+#timeEditor{padding:10px 12px;border-top:1px dashed #e4d2af}#timeEditor[hidden]{display:none}#timeEditor label{display:block;font-size:12px;margin-bottom:7px}#timeEditor input{max-width:100%;border:1px solid #e4d2af;border-radius:5px;padding:4px;background:#fffdf5}#hours{width:55px}button{border:1px solid #e4d2af;border-radius:7px;background:#fffdf5;padding:4px 8px;cursor:pointer}
+
+body.manual #capsule{height:100vh}body.manual #items{flex:1}
+#grip{width:38px;flex-shrink:0;text-align:center;color:#b29d7c;user-select:none;cursor:move}
+.resize{position:fixed;z-index:10;-webkit-app-region:no-drag;touch-action:none}
+.resize.n,.resize.s{left:12px;right:12px;height:6px;cursor:ns-resize}.resize.n{top:0}.resize.s{bottom:0}
+.resize.e,.resize.w{top:12px;bottom:12px;width:6px;cursor:ew-resize}.resize.e{right:0}.resize.w{left:0}
+.resize.ne,.resize.nw,.resize.se,.resize.sw{width:14px;height:14px}.resize.ne{top:0;right:0;cursor:nesw-resize}.resize.nw{top:0;left:0;cursor:nwse-resize}.resize.se{bottom:0;right:0;cursor:nwse-resize}.resize.sw{bottom:0;left:0;cursor:nesw-resize}
+.resize.se:after{content:'◢';position:absolute;bottom:2px;right:3px;color:#b39b76;font-size:11px}
+body.readonly .resize,body.locked .resize{display:none}
+header{height:48px;padding:7px 10px;gap:5px}header button{-webkit-app-region:no-drag;flex-shrink:0;width:27px;height:28px;padding:0;border:0;background:transparent;border-radius:7px;color:#927951}header button:hover{background:#ead9b7}header button.active{background:#f4c897;color:#9d4f17}#opacityBtn{width:39px;font-size:10px}#closeBtn:hover{background:#f6d6cd;color:#b44834}#grip{width:27px}#dot{display:none}#title{font-size:13px}body.readonly #grip{visibility:hidden}body.readonly *{user-select:none!important;pointer-events:none!important}body.readonly #pinBtn{pointer-events:auto!important}body.readonly #closeBtn{opacity:.35}body.readonly #title{color:#574b3c;opacity:1}.time{white-space:pre-line;line-height:1.6}.time.overdue{color:#bd6049}#addForm{position:relative}#addForm.has-text #add{padding-right:37px}#addTimer{position:absolute;right:5px;top:4px;border:0;background:transparent;padding:2px 5px;font-size:20px;line-height:24px;color:#ad8451}#addTimer[hidden]{display:none}#draftDate{font-size:11px;color:#ad8451;margin-top:5px;white-space:pre-line}#timeEditor{flex-shrink:0;max-height:calc(100vh - 105px);overflow:auto}.calendar-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.calendar-week,#calendarDays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}.calendar-week{text-align:center;font-size:11px;color:#a58c68;margin-bottom:4px}#calendarDays button{padding:4px 0;font-size:12px}#calendarDays button.selected{background:#edaa6a;color:#fff;border-color:#edaa6a}.calendar-tip{font-size:10px;color:#a58c68;margin:6px 0}#timeEditor select{border:1px solid #e4d2af;border-radius:5px;padding:3px;background:#fffdf5;color:inherit}#timeEditor{min-height:0;flex-shrink:1}</style><link rel="stylesheet" href="paper-theme.css"></head><body><section id="capsule">
+<header id="head"><button id="pinBtn" title="钉住并开启鼠标穿透" aria-label="钉住胶囊" aria-pressed="false">钉</button><span id="dot"></span><span id="grip" title="拖动这里移动胶囊">⠿</span><input id="title" aria-label="胶囊标题" maxlength="120"><button id="closeBtn" title="关闭此胶囊（保留待办）" aria-label="关闭胶囊">×</button></header>
+<div id="items"></div>
+<form id="timeEditor" hidden><input id="deadline" type="hidden"><div class="calendar-nav"><button type="button" id="prevMonth" aria-label="上个月">‹</button><strong id="monthLabel"></strong><button type="button" id="nextMonth" aria-label="下个月">›</button></div><label>截止时间 <select id="clockHour" aria-label="小时"></select> : <select id="clockMinute" aria-label="分钟"></select></label><div class="calendar-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div id="calendarDays"></div><div class="calendar-tip">先设置时间，再点日期，自动保存并关闭</div><label>提前 <input id="hours" type="number" min="0" max="168" value="2"> 小时提醒</label><button type="submit">保存</button> <button id="clearTime" type="button">清除</button> <button id="cancelTime" type="button">取消</button></form>
+<footer><form id="addForm"><input id="add" placeholder="添加条目，回车保存…" aria-label="新增待办" autocomplete="off"><button id="addTimer" type="button" hidden title="设置新条目的截止日期" aria-label="设置新条目的截止日期">◷</button></form><div id="draftDate" hidden></div><div class="hint">拖动 ⠿ 移动 · 拖动右下角缩放</div></footer>
+</section><script>
+const id=new URLSearchParams(location.search).get('capsule');
+const $=s=>document.getElementById(s);
+let current=null,editingTime=null,lastHeight=0,draftDeadline=null,draftHours=2;
+function deadlineLabel(deadline, now=Date.now()){
+  const left=deadline-now,mins=Math.floor(Math.abs(left)/60000);
+  const days=Math.floor(mins/1440),hours=Math.floor(mins%1440/60),minutes=mins%60;
+  const duration=(days?days+'天 ':'')+(hours?hours+'小时 ':'')+(minutes?minutes+'分钟':'');
+  const relative=left>0?'距离截止还有 '+(duration||'不到1分钟'):left===0?'已到截止时间':'已逾期 '+(duration||'不到1分钟');
+  const date=new Date(deadline);
+  const stamp=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')+' '+String(date.getHours()).padStart(2,'0')+':'+String(date.getMinutes()).padStart(2,'0');
+  return relative+'\n截止：'+stamp;
+}
+function updateDeadline(el){const deadline=Number(el.dataset.deadline);const label=deadlineLabel(deadline);if(el.textContent!==label)el.textContent=label;const overdue=deadline<=Date.now();if(el.classList.contains('overdue')!==overdue)el.classList.toggle('overdue',overdue);}
+setInterval(()=>document.querySelectorAll('.time[data-deadline]').forEach(updateDeadline),1000);
+const edit=(action,value)=>window.api.editCapsule(id,action,value);
+function render(data){
+  current=data.papers.find(p=>p.id===id);if(!current)return;
+  const through=current.desktopPinned ?? (data.settings?.desktopMouseThrough!==false);
+  $('pinBtn').classList.toggle('active',through);
+  $('pinBtn').setAttribute('aria-pressed',String(through));
+  $('pinBtn').textContent=through?'📌':'钉';
+  $('pinBtn').title=through?'取消钉住，恢复移动和编辑':'钉住并开启鼠标穿透';
+  document.body.classList.toggle('readonly',through);
+  const locked=through;
+  document.body.classList.toggle('locked',locked);
+  if(document.body.classList.contains('manual')!==!!current.desktopManualSize)lastHeight=0;
+  document.body.classList.toggle('manual',!!current.desktopManualSize);
+  $('head').classList.toggle('drag',!through && !locked);
+  $('title').readOnly=through;
+  $('title').disabled=through;
+  $('closeBtn').disabled=through;
+  if(through && document.activeElement!==$('pinBtn'))document.activeElement?.blur();
+  if(document.activeElement!==$('title'))$('title').value=current.title;
+  $('dot').style.background=/^#[\da-f]{3,8}$/i.test(current.color)?current.color:'#e8864a';
+  if(through){$('timeEditor').hidden=true;editingTime=null;}
+  $('items').replaceChildren();
+  const items=(current.items||[]).filter(i=>!i.done).sort((a,b)=>(a.order||0)-(b.order||0));
+  if(!items.length){const el=document.createElement('div');el.className='empty';el.textContent=through?'暂无待办':'在下方添加第一条待办';$('items').append(el);}
+  for(const item of items){
+    const row=document.createElement('div');row.className='item';
+    const check=document.createElement('input');check.type='checkbox';check.className='check';check.disabled=through;check.setAttribute('aria-label','归档 '+item.text);check.onchange=()=>edit('done',{id:item.id});
+    const content=document.createElement('div');content.className='content';
+    const text=document.createElement('div');text.className='text';text.textContent=item.text;text.title='双击编辑内容';
+    text.ondblclick=()=>{if(through)return;text.contentEditable='true';text.focus();};
+    text.onblur=()=>{if(text.isContentEditable){text.contentEditable='false';if(text.textContent.trim())edit('text',{id:item.id,text:text.textContent});else text.textContent=item.text;}};
+    text.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();text.blur();}if(e.key==='Escape'){text.textContent=item.text;text.blur();}};
+    content.append(text);
+    if(item.deadline){const time=document.createElement('div');time.className='time';time.dataset.deadline=String(item.deadline);updateDeadline(time);content.append(time);}
+    const timer=document.createElement('button');timer.className='timer';timer.textContent='◷';timer.title='设置截止时间与提醒';timer.onclick=()=>{
+      openTimeEditor(item.id,item.deadline,item.remindBeforeHours??2);
+    };
+    row.append(check,content,timer);$('items').append(row);
+  }
+}
+$('pinBtn').onclick=()=>window.api.capsuleControl(id,'pin');
+let pinGeometry='';
+function reportPinRegion(){
+  const r=$('pinBtn').getBoundingClientRect(),rect={x:r.x,y:r.y,width:r.width,height:r.height};
+  const signature=JSON.stringify(rect);if(signature!==pinGeometry){pinGeometry=signature;window.api.reportPinRegion(id,rect);}
+}
+new ResizeObserver(reportPinRegion).observe($('head'));
+window.addEventListener('resize',reportPinRegion);
+document.fonts.ready.then(reportPinRegion);
+window.addEventListener('load',reportPinRegion);
+let overPin=false;
+document.addEventListener('mousemove',e=>{
+  const r=$('pinBtn').getBoundingClientRect();
+  const inside=e.clientX>=r.left && e.clientX<r.right && e.clientY>=r.top && e.clientY<r.bottom;
+  if(inside!==overPin){overPin=inside;window.api.updatePointer(id);}
+},true);
+$('pinBtn').addEventListener('pointerenter',()=>window.api.updatePointer(id));
+$('closeBtn').onclick=()=>window.api.capsuleControl(id,'close');
+$('title').onchange=()=>edit('title',$('title').value);
+$('title').onkeydown=e=>{if(e.key==='Enter')$('title').blur();};
+function updateDraft(){
+  const hasText=!!$('add').value.trim();
+  $('addTimer').hidden=!hasText;$('addForm').classList.toggle('has-text',hasText);
+  $('draftDate').hidden=!draftDeadline || !hasText;
+  $('draftDate').textContent=draftDeadline?deadlineLabel(draftDeadline):'';
+  $('addTimer').title=draftDeadline?'修改截止日期':'设置新条目的截止日期';
+}
+let calendarMonth=new Date(),selectedDate=new Date();
+function calendarDateValue(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')+'T'+$('clockHour').value+':'+$('clockMinute').value;}
+function drawCalendar(){
+  const year=calendarMonth.getFullYear(),month=calendarMonth.getMonth();
+  $('monthLabel').textContent=year+'年'+(month+1)+'月';$('calendarDays').replaceChildren();
+  const offset=(new Date(year,month,1).getDay()+6)%7;
+  for(let i=0;i<offset;i++)$('calendarDays').append(document.createElement('span'));
+  for(let day=1;day<=new Date(year,month+1,0).getDate();day++){
+    const button=document.createElement('button');button.type='button';button.textContent=day;
+    button.classList.toggle('selected',selectedDate.getFullYear()===year && selectedDate.getMonth()===month && selectedDate.getDate()===day);
+    button.onclick=()=>{selectedDate=new Date(year,month,day);$('deadline').value=calendarDateValue(selectedDate);saveTime();};
+    $('calendarDays').append(button);
+  }
+}
+for(const [name,count] of [['clockHour',24],['clockMinute',60]])for(let n=0;n<count;n++){const option=document.createElement('option');option.value=option.textContent=String(n).padStart(2,'0');$(name).append(option);}
+$('prevMonth').onclick=()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1);drawCalendar();};
+$('nextMonth').onclick=()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1);drawCalendar();};
+$('clockHour').onchange=$('clockMinute').onchange=()=>{$('deadline').value=calendarDateValue(selectedDate);};
+function openTimeEditor(target,deadline,hours){
+  editingTime=target;
+  const date=deadline?new Date(deadline):new Date(Date.now()+2*3600000);
+  $('deadline').value=new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  selectedDate=new Date(date);calendarMonth=new Date(date.getFullYear(),date.getMonth(),1);
+  $('clockHour').value=String(date.getHours()).padStart(2,'0');$('clockMinute').value=String(date.getMinutes()).padStart(2,'0');
+  drawCalendar();$('hours').value=hours;$('timeEditor').hidden=false;
+}
+function closeTimeEditor(){
+  // The in-page calendar closes synchronously, including selecting the same date.
+  $('deadline').blur();$('hours').blur();$('timeEditor').hidden=true;editingTime=null;
+  $('add').focus();
+}
+function saveTime(clear=false){
+  if(editingTime===null)return;
+  const deadline=clear?null:new Date($('deadline').value).getTime();
+  if(!clear && (!Number.isFinite(deadline) || !$('deadline').validity.valid))return;
+  const hours=Number($('hours').value);
+  if(editingTime==='draft'){draftDeadline=deadline;draftHours=hours;updateDraft();}
+  else edit('deadline',{id:editingTime,deadline,hours});
+  closeTimeEditor();
+}
+$('add').oninput=()=>{if(!$('add').value.trim()){draftDeadline=null;draftHours=2;if(editingTime==='draft')closeTimeEditor();}updateDraft();};
+$('addTimer').onclick=()=>openTimeEditor('draft',draftDeadline,draftHours);
+$('addForm').onsubmit=e=>{
+  e.preventDefault();if(!$('add').value.trim())return;
+  edit('add',{text:$('add').value,deadline:draftDeadline,hours:draftHours});
+  $('add').value='';draftDeadline=null;draftHours=2;updateDraft();
+  if(editingTime==='draft')closeTimeEditor();
+};
+$('timeEditor').onsubmit=e=>{e.preventDefault();saveTime();};
+$('deadline').onchange=()=>saveTime();
+$('clearTime').onclick=()=>saveTime(true);
+$('cancelTime').onclick=closeTimeEditor;
+function measure(){if(document.body.classList.contains("manual"))return;const wanted=Math.ceil($('head').offsetHeight+$('items').scrollHeight+($('timeEditor').hidden?0:$('timeEditor').offsetHeight)+$('capsule').querySelector('footer').offsetHeight+2);if(wanted!==lastHeight){lastHeight=wanted;window.api.reportCapsuleSize(id,wanted);}}
+let measureQueued=false;
+function queueMeasure(){if(measureQueued)return;measureQueued=true;requestAnimationFrame(()=>{measureQueued=false;measure();});}
+new ResizeObserver(queueMeasure).observe($('capsule'));
+new MutationObserver(queueMeasure).observe($('capsule'),{subtree:true,childList:true,attributes:true,characterData:true});
+for(const edge of ['n','s','e','w','ne','nw','se','sw']){
+  const handle=document.createElement('div');handle.className='resize '+edge;handle.title='拖动调整大小';document.body.append(handle);
+  handle.onpointerdown=e=>{if(e.button!==0)return;e.preventDefault();document.body.classList.add('manual');handle.setPointerCapture(e.pointerId);window.api.resizeCapsule(id,'start',edge);};
+  handle.onpointermove=e=>{if(handle.hasPointerCapture(e.pointerId))window.api.resizeCapsule(id,'move',edge);};
+  const end=e=>{if(handle.hasPointerCapture(e.pointerId)){handle.releasePointerCapture(e.pointerId);window.api.resizeCapsule(id,'end',edge);}};
+  handle.onpointerup=end;handle.onpointercancel=end;
+}
+render(window.api.bootData);window.api.onCapsuleData(render);
+</script></body></html>
+
+
+

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="440" viewBox="0 0 1200 440">
+<rect width="1200" height="440" rx="24" fill="#f5eedf"/>
+<g font-family="Arial, Noto Sans SC, sans-serif">
+<text x="66" y="115" font-size="58" font-weight="700" fill="#55452f">To-dolist</text>
+<text x="69" y="163" font-size="23" fill="#96784f">把待办轻轻放在桌面上</text>
+<text x="69" y="240" font-size="18" fill="#78664c">桌面胶囊 · 截止倒计时 · 钉住与鼠标穿透</text>
+<text x="69" y="275" font-size="18" fill="#78664c">单文件运行 · 本地 JSON · 自由移动与缩放</text>
+<rect x="69" y="323" width="170" height="38" rx="19" fill="#e6d6b7"/>
+<text x="94" y="349" font-size="16" fill="#6e5738">Windows x64</text>
+<rect x="690" y="66" width="432" height="299" rx="17" fill="#fffaf0" stroke="#dfd0b3"/>
+<path d="M707 66h398a17 17 0 0 1 17 17v30H690V83a17 17 0 0 1 17-17" fill="#f8efd9"/>
+<text x="718" y="98" font-size="18" fill="#96784f">♧</text><text x="754" y="98" font-size="18" fill="#55452f">工作计划</text><text x="1086" y="98" font-size="22" fill="#a18d6c">×</text>
+<rect x="715" y="142" width="17" height="17" rx="4" fill="white" stroke="#ceb990"/>
+<text x="746" y="158" font-size="18" fill="#594d3b">整理项目资料</text>
+<path d="M715 182h380" stroke="#e8dcc4" stroke-dasharray="4 4"/>
+<rect x="715" y="207" width="17" height="17" rx="4" fill="white" stroke="#ceb990"/>
+<text x="746" y="223" font-size="18" fill="#594d3b">完成本周工作总结</text>
+<text x="746" y="254" font-size="13" fill="#a18861">距离截止还有 2天 3小时 · 截止日期随时可查</text>
+<rect x="713" y="297" width="386" height="39" rx="8" fill="#fffdf8" stroke="#e2d4b9"/>
+<text x="728" y="322" font-size="14" fill="#b09b7a">添加条目，回车保存…</text>
+<text x="988" y="402" font-size="12" fill="#a18d6c">功能示意图</text>
+</g></svg>

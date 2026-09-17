@@ -1,0 +1,14 @@
+{
+  "name": "to-dolist",
+  "version": "1.0.0",
+  "description": "Windows desktop capsule todo — personal learning project inspired by PaperTodo",
+  "main": "source/main.js",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "31.7.7"
+  }
+}
